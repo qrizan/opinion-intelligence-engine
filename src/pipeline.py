@@ -1,6 +1,9 @@
-# pipeline untuk analisis sentiment dan summarization.
+"""
+Pipeline untuk analisis sentiment dan summarization teks panjang.
+"""
 
 import torch
+import logging
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -10,11 +13,13 @@ from pathlib import Path
 from typing import List, Dict, Any
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 class OpinionIntelligencePipeline:
-    # pipeline untuk analisis sentiment dan summarization teks panjang.
+    """Pipeline untuk analisis sentiment dan summarization teks panjang."""
     
     def __init__(self):
-        # initialize pipeline dengan load model.
+        """Initialize pipeline dengan load model."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.base_dir = Path(__file__).parent.parent
         
@@ -59,7 +64,7 @@ class OpinionIntelligencePipeline:
         
         # load sentiment model
         try:
-            print("Loading sentiment model...")
+            logger.info("Loading sentiment model...")
             self.sentiment_tokenizer = AutoTokenizer.from_pretrained(
                 self.sentiment_model_path,
                 local_files_only=True
@@ -69,13 +74,13 @@ class OpinionIntelligencePipeline:
                 local_files_only=True
             ).to(self.device)
             self.sentiment_model.eval()
-            print("[OK] Sentiment model loaded")
+            logger.info("Sentiment model loaded successfully")
         except Exception as e:
             raise RuntimeError(f"Error loading sentiment model: {str(e)}")
         
         # load summarization model
         try:
-            print("Loading summarization model...")
+            logger.info("Loading summarization model...")
             self.summarization_tokenizer = AutoTokenizer.from_pretrained(
                 self.summarization_model_path,
                 local_files_only=True
@@ -85,11 +90,11 @@ class OpinionIntelligencePipeline:
                 local_files_only=True
             ).to(self.device)
             self.summarization_model.eval()
-            print("[OK] Summarization model loaded")
+            logger.info("Summarization model loaded successfully")
         except Exception as e:
             raise RuntimeError(f"Error loading summarization model: {str(e)}")
         
-        print("[OK] Pipeline initialized successfully")
+        logger.info("Pipeline initialized successfully")
     
     def chunk_text_by_tokens(self, text: str, max_length: int = 512) -> List[str]:
         """

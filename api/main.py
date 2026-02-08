@@ -19,8 +19,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # constants
-MAX_TEXT_LENGTH = 50000  # Maksimal 50k karakter
-MIN_TEXT_LENGTH = 10  # Minimal 10 karakter
+MAX_TEXT_LENGTH = 100000  # maksimal 10k karakter
+MIN_TEXT_LENGTH = 10  # minimal 10 karakter
 
 # import pipeline functions
 import sys
@@ -120,17 +120,18 @@ async def analyze_text(input_data: TextInput):
             detail="Terjadi kesalahan saat memproses teks. Silakan coba lagi."
         )
 
-# gradio interface - versi simple, informatif, tanpa icon
-def gradio_interface(text: str, max_excerpts: int = 3):
+# gradio interface - versi lebih informatif untuk user awam
+def gradio_interface(text: str, max_excerpts: int = 3, progress=gr.Progress()):
     """
-    Gradio interface dengan label bahasa Indonesia yang jelas.
+    Gradio interface dengan label bahasa Indonesia yang jelas dan output lebih informatif.
     
     Args:
         text: Teks yang akan dianalisis
         max_excerpts: Jumlah bagian teks penting yang akan ditampilkan (1-5)
+        progress: Gradio progress tracker untuk loading indicator
     
     Returns:
-        String markdown dengan hasil analisis atau pesan error
+        String HTML dengan hasil analisis atau pesan error
     """
     
     # Validasi input
@@ -149,82 +150,150 @@ def gradio_interface(text: str, max_excerpts: int = 3):
         return "## Error\n\n**Jumlah bagian teks penting harus antara 1-5.**"
     
     try:
+        # Progress indicator
+        progress(0.1, desc="Memuat model...")
         logger.info(f"Processing Gradio request (length: {len(text)} chars, max_excerpts: {max_excerpts})")
         pipe = get_pipeline()
+        
+        progress(0.3, desc="Menganalisis teks...")
         result = pipe.process(text, max_excerpts=max_excerpts)
+        
+        progress(0.8, desc="Menyusun hasil...")
         logger.info("Gradio analysis completed successfully")
         
-        # format output user-friendly tanpa icon
+        # format output lebih informatif untuk user awam
         sentiment_label = 'Positif' if result['document_sentiment'] == 1 else 'Negatif'
+        sentiment_color = '#4caf50' if result['document_sentiment'] == 1 else '#ff5722'  # hijau untuk positif, orange untuk negatif
         
         chunk_stats = result['chunk_statistics']
         total_chunks = chunk_stats['total_chunks']
         positive_pct = (chunk_stats['positive_chunks'] / total_chunks * 100) if total_chunks > 0 else 0
         negative_pct = (chunk_stats['negative_chunks'] / total_chunks * 100) if total_chunks > 0 else 0
         
-        # output dengan penjelasan jelas
+        # Confidence level description untuk user awam
+        confidence_pct = result['document_confidence'] * 100
+        if confidence_pct >= 80:
+            confidence_desc = "Sangat Yakin"
+        elif confidence_pct >= 60:
+            confidence_desc = "Cukup Yakin"
+        elif confidence_pct >= 40:
+            confidence_desc = "Agak Yakin"
+        else:
+            confidence_desc = "Kurang Yakin"
+        
+        # output dengan penjelasan lebih jelas untuk user awam
         summary_text = f"""
-## Hasil Analisis Sentimen
+<div style="padding: 0px 20px; border-radius: 8px; margin-bottom: 20px;">
+<h2 style="margin: 0; font-size: 24px;">Hasil Analisis Sentimen</h2>
+</div>
 
-**Sentimen Dokumen:** {sentiment_label}  
-**Tingkat Keyakinan:** {result['document_confidence']:.1%}  
-*Tingkat keyakinan model dalam menentukan sentimen (0-100%)*
+<div style="padding: 20px; border-radius: 8px; border-left: 4px solid {sentiment_color}; margin-bottom: 20px;">
+<h3 style="margin-top: 0; color: {sentiment_color}; font-size: 20px;">
+Sentimen Dokumen: <strong>{sentiment_label}</strong>
+</h3>
+<p style="font-size: 16px; margin: 10px 0;">
+<strong>Tingkat Keyakinan:</strong> {result['document_confidence']:.1%} ({confidence_desc})
+</p>
+<p style="font-size: 14px; margin: 5px 0;">
+Model menganalisis seluruh teks dan menentukan bahwa sentimen keseluruhan adalah <strong>{sentiment_label.lower()}</strong> dengan tingkat keyakinan {result['document_confidence']:.1%}. Semakin tinggi persentase, semakin yakin model dengan hasil analisisnya.
+</p>
+</div>
 
----
+<div style="padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<h3 style="margin-top: 0; font-size: 18px;">Informasi Teks</h3>
+<ul style="line-height: 1.8;">
+<li><strong>Panjang Teks:</strong> {result['text_length']:,} karakter</li>
+<li><strong>Jumlah Bagian yang Dianalisis:</strong> {total_chunks} bagian</li>
+</ul>
+<p style="font-size: 14px; margin-top: 10px;">
+Teks panjang dibagi menjadi {total_chunks} bagian untuk dianalisis secara lebih akurat. Setiap bagian dianalisis terpisah, kemudian hasilnya digabungkan untuk mendapatkan sentimen keseluruhan.
+</p>
+</div>
 
-## Informasi Teks
+<div style="padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<h3 style="margin-top: 0; font-size: 18px;">Distribusi Sentimen per Bagian</h3>
+<div style="margin: 15px 0;">
+<div style="display: flex; align-items: center; margin-bottom: 10px;">
+<span style="display: inline-block; width: 20px; height: 20px; background: #4caf50; border-radius: 4px; margin-right: 10px;"></span>
+<strong>Bagian Positif:</strong> {chunk_stats['positive_chunks']} bagian ({positive_pct:.1f}%)
+</div>
+<div style="display: flex; align-items: center;">
+<span style="display: inline-block; width: 20px; height: 20px; background: #ff5722; border-radius: 4px; margin-right: 10px;"></span>
+<strong>Bagian Negatif:</strong> {chunk_stats['negative_chunks']} bagian ({negative_pct:.1f}%)
+</div>
+</div>
+<p style="font-size: 14px; margin-top: 10px;">
+Dari {total_chunks} bagian teks yang dianalisis, {chunk_stats['positive_chunks']} bagian terdeteksi sebagai positif dan {chunk_stats['negative_chunks']} bagian terdeteksi sebagai negatif. Ini membantu memahami bagaimana sentimen tersebar di seluruh teks.
+</p>
+</div>
 
-- **Panjang Teks:** {result['text_length']:,} karakter
-- **Jumlah Bagian:** {total_chunks} bagian  
-*Teks panjang dibagi menjadi beberapa bagian untuk analisis yang lebih akurat*
-
----
-
-## Distribusi Sentimen per Bagian
-
-- **Bagian Positif:** {chunk_stats['positive_chunks']} bagian ({positive_pct:.1f}%)
-- **Bagian Negatif:** {chunk_stats['negative_chunks']} bagian ({negative_pct:.1f}%)  
-*Setiap bagian teks dianalisis secara terpisah, kemudian digabungkan untuk hasil akhir*
-
----
-
-## Bagian Teks Penting & Ringkasan
-
-*Bagian teks dengan tingkat keyakinan tertinggi yang paling mewakili sentimen dokumen*
-
+<div style="padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<h3 style="margin-top: 0; font-size: 18px;">Bagian Teks Penting & Ringkasan</h3>
+<p style="font-size: 14px; margin-bottom: 15px;">
+Berikut adalah bagian-bagian teks yang paling mewakili sentimen dokumen. Bagian-bagian ini dipilih karena memiliki tingkat keyakinan tertinggi dalam analisis. Setiap bagian juga telah dirangkum untuk memudahkan pemahaman.
+</p>
 """
         
         for i, (excerpt, summary) in enumerate(zip(result['key_excerpts'], result['summaries']), 1):
             excerpt_label = 'Positif' if excerpt['label'] == 1 else 'Negatif'
+            excerpt_color = '#4caf50' if excerpt['label'] == 1 else '#ff5722'
+            
+            # Confidence badge
+            excerpt_confidence_pct = excerpt['confidence'] * 100
+            if excerpt_confidence_pct >= 80:
+                confidence_badge = "Sangat Yakin"
+            elif excerpt_confidence_pct >= 60:
+                confidence_badge = "Cukup Yakin"
+            else:
+                confidence_badge = "Agak Yakin"
             
             summary_text += f"""
-### Bagian {i} - {excerpt_label} (Keyakinan: {excerpt['confidence']:.1%})
+<div style="padding: 20px; border-radius: 8px; border-left: 4px solid {excerpt_color}; margin-bottom: 20px;">
+<h4 style="margin-top: 0; color: {excerpt_color}; font-size: 16px;">
+Bagian {i} - {excerpt_label} 
+<span style="font-size: 12px; font-weight: normal;">(Keyakinan: {excerpt['confidence']:.1%} - {confidence_badge})</span>
+</h4>
 
-**Teks Asli:**
-> {excerpt['text'][:200]}{'...' if len(excerpt['text']) > 200 else ''}
+<div style="padding: 12px; border-radius: 6px; margin: 15px 0;">
+<strong>Teks Asli:</strong>
+<p style="margin: 8px 0; font-style: italic; line-height: 1.6;">
+"{excerpt['text'][:300]}{'...' if len(excerpt['text']) > 300 else ''}"
+</p>
+</div>
 
-**Ringkasan:**
+<div style="padding: 12px; border-radius: 6px; border-left: 3px solid #999;">
+<strong>Ringkasan:</strong>
+<p style="margin: 8px 0; line-height: 1.6;">
 {summary}
-
----
+</p>
+</div>
+</div>
 """
         
+        progress(1.0, desc="Selesai!")
         return summary_text
     except Exception as e:
         logger.error(f"Error in Gradio interface: {str(e)}", exc_info=True)
-        return "## Terjadi Kesalahan\n\n**Terjadi kesalahan saat memproses teks. Silakan coba lagi.**"
+        return "## Terjadi Kesalahan\n\n**Terjadi kesalahan saat memproses teks. Silakan coba lagi atau pastikan teks yang dimasukkan valid.**"
 
-with gr.Blocks(title="Opinion Intelligence Engine") as gradio_app:
-    gr.Markdown("# Opinion Intelligence Engine")
-    gr.Markdown("Analisis sentiment dan summarization untuk teks panjang")
+# Theme default Gradio - simple dan clean
+with gr.Blocks(
+    title="Opinion Intelligence Engine",
+    theme=gr.themes.Soft()
+) as gradio_app:
     
+    # Header simple
+    gr.Markdown("# Opinion Intelligence Engine")
+    gr.Markdown("Analisis sentimen dan ringkasan untuk teks panjang")
+        
     with gr.Row():
         with gr.Column(scale=2):
             text_input = gr.Textbox(
-                label="Masukkan Teks",
-                placeholder="Masukkan teks panjang untuk analisis sentimen dan ringkasan...",
-                lines=12,
-                show_label=True
+                label="Masukkan Teks (Bahasa Inggris)",
+                placeholder="Masukkan teks panjang untuk analisis sentimen dan ringkasan...\n\nContoh: Review produk, artikel, komentar, dll.",
+                lines=15,
+                show_label=True,
+                info="Teks harus dalam bahasa Inggris. Minimal 10 karakter, maksimal 100,000 karakter."
             )
             max_excerpts = gr.Slider(
                 minimum=1,
@@ -232,26 +301,42 @@ with gr.Blocks(title="Opinion Intelligence Engine") as gradio_app:
                 value=3,
                 step=1,
                 label="Jumlah Bagian Teks Penting",
-                info="Berapa banyak bagian teks dengan keyakinan tertinggi yang akan ditampilkan (1-5)"
+                info="- Berapa banyak bagian teks dengan keyakinan tertinggi yang akan ditampilkan (1-5).\n- Semakin banyak, semakin detail hasilnya."
             )
-            submit_btn = gr.Button("Analisis", variant="primary", size="lg")
-            clear_btn = gr.Button("Hapus", variant="secondary")
+            with gr.Row():
+                submit_btn = gr.Button("Analisis", variant="primary", size="lg", scale=2)
+                clear_btn = gr.Button("Hapus", variant="secondary", size="lg", scale=1)
         
         with gr.Column(scale=3):
-            output = gr.Markdown(
+            output = gr.HTML(
                 label="Hasil Analisis",
-                value="**Hasil analisis akan muncul di sini setelah Anda memasukkan teks dan klik tombol Analisis...**"
+                value="""
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <p style="font-size: 18px; margin-bottom: 10px;">Hasil analisis akan muncul di sini</p>
+                    <p style="font-size: 14px;">Masukkan teks di sebelah kiri dan klik tombol "Analisis" untuk memulai</p>
+                </div>
+                """
             )
     
-    # Event handlers
+    # Event handlers dengan loading indicator
     submit_btn.click(
         fn=gradio_interface,
         inputs=[text_input, max_excerpts],
-        outputs=output
+        outputs=output,
+        show_progress="full"  # Menampilkan progress bar
     )
     
     clear_btn.click(
-        fn=lambda: ("", 3, "**Hasil analisis akan muncul di sini setelah Anda memasukkan teks dan klik tombol Analisis...**"),
+        fn=lambda: (
+            "", 
+            3, 
+            """
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <p style="font-size: 18px; margin-bottom: 10px;">Hasil analisis akan muncul di sini</p>
+                <p style="font-size: 14px;">Masukkan teks di sebelah kiri dan klik tombol "Analisis" untuk memulai</p>
+            </div>
+            """
+        ),
         outputs=[text_input, max_excerpts, output]
     )
 

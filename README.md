@@ -1,8 +1,14 @@
 # Opinion Intelligence Engine
 
-Proyek pembelajaran untuk analisis sentimen dan ringkasan teks panjang menggunakan machine learning.
+Proyek pembelajaran untuk menganalisis opini dan pendapat dari teks panjang menggunakan machine learning. Sistem ini dapat memahami sentimen (positif/negatif) dan merangkum inti dari opini yang dianalisis.
 
----
+
+## Problem Statement
+
+Dalam dunia digital, opini dan pendapat pengguna tersebar dalam berbagai bentuk teks panjang seperti review produk, komentar di media sosial, feedback pelanggan, dan artikel opini. Untuk memahami sentimen dan inti dari opini tersebut, diperlukan analisis yang dapat menangani teks panjang secara menyeluruh.
+
+Model machine learning untuk analisis sentimen seringkali memiliki keterbatasan dalam memproses teks panjang karena batasan input length (maksimal 512 token). Proyek ini mencoba mengatasi masalah tersebut dengan memecah teks panjang menjadi bagian-bagian kecil, menganalisis setiap bagian, dan menggabungkan hasilnya untuk mendapatkan sentimen keseluruhan.
+
 
 ## Features
 
@@ -11,87 +17,62 @@ Proyek pembelajaran untuk analisis sentimen dan ringkasan teks panjang menggunak
 - Memilih bagian teks penting yang paling mewakili sentimen
 - Merangkum bagian teks penting menjadi ringkasan singkat
 
----
 
 ## Limitations
 
-- Karena keterbatasan dataset yang sesuai, projek hanya mendukung bahasa Inggris (input teks harus dalam bahasa Inggris)
+- Hanya mendukung bahasa Inggris karena keterbatasan dataset bahasa Indonesia yang sesuai dengan tujuan proyek
 - Tidak bisa menganalisis teks yang sangat pendek (< 10 karakter)
 - Tidak 100% akurat (seperti semua model ML)
 - Tidak bisa memahami sarkasme atau konteks sangat kompleks
 - Hanya untuk teks, tidak untuk gambar/audio/video
 
----
-
-## How It Works
-
-Karena model ML biasanya hanya bisa memproses teks pendek (maksimal 512 kata), proyek ini:
-
-1. Memecah teks panjang menjadi bagian-bagian kecil
-2. Menganalisis setiap bagian secara terpisah
-3. Menggabungkan hasil dari semua bagian
-4. Memilih bagian terpenting berdasarkan keyakinan
-5. Merangkum bagian terpenting menjadi ringkasan
-
----
-
-## Project Structure
-
-```
-opinion-intelligence-engine/
-├── notebook/          # Notebook untuk training
-├── api/               # Server (FastAPI + Gradio)
-├── src/               # Pipeline logic
-├── models/            # Trained models (not in GitHub)
-├── download_models.py # Download models from Google Drive
-├── requirements.txt
-├── Dockerfile
-└── docker-compose.yml
-```
-
----
-
 ## Quick Start
 
-### Using Docker (Recommended)
+### Docker (Recommended)
 
 ```bash
-docker-compose up -d
-```
+# 1. Copy .env.example menjadi .env
+cp .env.example .env
 
-Tunggu build selesai (~35-50 menit pertama kali), lalu buka `http://localhost:8000`
+# 2. Edit .env dan isi SENTIMENT_FOLDER_ID dan SUMMARIZATION_FOLDER_ID
+#    dengan Google Drive folder IDs
+
+# 3. Build dan jalankan
+docker-compose up -d --build
+
+# 4. Tunggu build selesai (~35-50 menit pertama kali)
+# 5. Buka http://localhost:8000
+```
 
 ### Manual Setup
 
 ```bash
+# 1. Buat virtual environment
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# atau
+venv\Scripts\activate     # Windows
+
+# 2. Install dependencies
 pip install -r requirements.txt
+
+# 3. Copy .env.example menjadi .env dan isi folder IDs
+cp .env.example .env
+
+# 4. Download model dari Google Drive
 python download_models.py
+
+# 5. Jalankan server
 python api/main.py
 ```
-
----
 
 ## Usage
 
 ### Web Interface (Gradio)
 
-**Catatan Penting:** Interface menggunakan bahasa Indonesia untuk kemudahan penggunaan, namun **input teks harus dalam bahasa Inggris** karena model hanya mendukung bahasa Inggris.
+Buka `http://localhost:8000` di browser.
 
-**Cara Menggunakan:**
-1. Buka `http://localhost:8000`
-2. Masukkan teks panjang dalam **bahasa Inggris**
-3. Atur jumlah bagian teks penting (1-5) dengan slider
-4. Klik tombol "Analisis"
-5. Lihat hasil di panel kanan
-
-**Output yang Ditampilkan:**
-- **Sentimen Dokumen:** Positif atau Negatif dengan tingkat keyakinan (0-100%)
-- **Informasi Teks:** Panjang teks (karakter) dan jumlah bagian yang dibuat
-- **Distribusi Sentimen per Bagian:** Persentase bagian positif vs negatif
-- **Bagian Teks Penting:** Bagian teks dengan keyakinan tertinggi (ditampilkan sesuai jumlah yang dipilih)
-- **Ringkasan:** Ringkasan singkat untuk setiap bagian teks penting
+**Cara Menggunakan:** Masukkan teks panjang dalam bahasa Inggris, atur jumlah bagian teks penting yang ingin ditampilkan (1-5), lalu klik tombol "Analisis". Sistem akan menganalisis sentimen teks dan menampilkan bagian-bagian penting beserta ringkasannya.
 
 ### API
 
@@ -105,45 +86,65 @@ curl -X POST "http://localhost:8000/analyze" \
 
 ## Notebooks
 
-- **00_setup_environment.ipynb** - Setup environment
-- **01_data_exploration.ipynb** - Eksplorasi dataset
-- **02_train_sentiment_model.ipynb** - Training model sentiment
-- **03_long_text_sentiment_pipeline.ipynb** - Pipeline untuk teks panjang
-- **04_train_summarization_model.ipynb** - Training model summarization
-- **05_end_to_end_inference_demo.ipynb** - Demo lengkap
+Notebook-notebook berikut digunakan untuk training dan eksplorasi. Lihat masing-masing notebook untuk detail implementasi:
 
----
+- **00_setup_environment.ipynb** - Setup environment
+https://colab.research.google.com/drive/1zkHFbZlRP5bhreKn7UaXUVnCx5hBFxlk
+
+- **01_data_exploration.ipynb** - Eksplorasi dataset
+https://colab.research.google.com/drive/1EX_dc_wepp3JOHmmStU2UmlHeoPLI4xe
+
+- **02_train_sentiment_model.ipynb** - Training model sentiment
+https://colab.research.google.com/drive/1UsmSuLXSe8572e4fSvbGyFYPAZeO-xLX
+
+- **03_long_text_sentiment_pipeline.ipynb** - Pipeline untuk teks panjang
+https://colab.research.google.com/drive/1VGP1dcVSznavgyoViLgIqjgk1NPkeRM4
+
+- **04_train_summarization_model.ipynb** - Training model summarization
+https://colab.research.google.com/drive/1U7myU1zeJ8ZuFVMlaOACl1YvMmlFsiV-
+
+- **05_end_to_end_inference_demo.ipynb** - Demo lengkap
+https://colab.research.google.com/drive/122Ok3AcQkTeKx0Vv6WtHKNEwnvWADvv8
+
+## Project Structure
+
+```
+opinion-intelligence-engine/
+├── notebook/          # Notebook untuk training
+├── api/               # Server (FastAPI + Gradio)
+├── src/               # Pipeline logic
+├── models/            # Trained models (not in GitHub)
+├── download_models.py
+├── requirements.txt
+├── Dockerfile
+└── docker-compose.yml
+```
 
 ## Technologies
 
-- PyTorch
-- Transformers (HuggingFace)
-- FastAPI
-- Gradio
-- Docker
+- [PyTorch](https://pytorch.org/) - Deep learning framework
+- [Transformers](https://huggingface.co/docs/transformers) (HuggingFace) - Pre-trained transformer models
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework for building APIs
+- [Gradio](https://www.gradio.app/) - Python library for creating ML demos and web apps
+- [Docker](https://www.docker.com/) - Containerization platform
 
 **Models:**
-- DistilBERT (sentiment analysis)
-- T5-base (summarization)
+- [DistilBERT](https://huggingface.co/docs/transformers/model_doc/distilbert) - Lightweight BERT model untuk sentiment analysis
+- [T5-base](https://huggingface.co/docs/transformers/model_doc/t5) - Text-to-Text Transfer Transformer untuk summarization
 
----
 
-## Environment Variables (Optional)
-
-Untuk keamanan dan fleksibilitas, beberapa konfigurasi bisa di-set via environment variables:
+## Environment Variables
 
 - `PORT`: Port untuk server (default: 8000)
-- `ALLOWED_ORIGINS`: CORS allowed origins, pisahkan dengan koma (default: http://localhost:8000,http://127.0.0.1:8000)
-- `SENTIMENT_FOLDER_ID`: Google Drive folder ID untuk model sentiment (default: sudah di-set)
-- `SUMMARIZATION_FOLDER_ID`: Google Drive folder ID untuk model summarization (default: sudah di-set)
+- `ALLOWED_ORIGINS`: CORS allowed origins, pisahkan dengan koma
+- `SENTIMENT_FOLDER_ID`: Google Drive folder ID untuk model sentiment
+- `SUMMARIZATION_FOLDER_ID`: Google Drive folder ID untuk model summarization
 
-**Catatan:** Folder IDs default sudah di-set di kode. Hanya perlu set environment variable jika ingin menggunakan folder berbeda.
+Lihat `.env.example` untuk contoh konfigurasi.
 
----
 
 ## Notes
 
-- Proyek ini dibuat untuk **pembelajaran**, bukan untuk production
+- Proyek ini dibuat untuk **catatan pembelajaran NLP**, bukan untuk production
 - Model dilatih dengan dataset terbatas
 - Kode dibuat sederhana untuk mudah dipahami
-- Tidak ada klaim bahwa ini adalah solusi terbaik atau paling akurat

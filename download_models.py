@@ -56,7 +56,7 @@ if not SENTIMENT_FOLDER_ID or not SUMMARIZATION_FOLDER_ID:
     print("="*60)
     print("ERROR: Folder IDs belum di-set!")
     print("="*60)
-    print("\nUntuk download model, Anda HARUS set folder IDs di .env file:")
+    print("\nUntuk download model, HARUS set folder IDs di .env file:")
     print("\n  1. Copy .env.example menjadi .env:")
     print("     cp .env.example .env")
     print("\n  2. Edit .env dan uncomment + isi folder IDs:")
