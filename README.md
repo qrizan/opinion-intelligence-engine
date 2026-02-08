@@ -25,6 +25,7 @@ Model machine learning untuk analisis sentimen seringkali memiliki keterbatasan 
 - Tidak 100% akurat (seperti semua model ML)
 - Tidak bisa memahami sarkasme atau konteks sangat kompleks
 - Hanya untuk teks, tidak untuk gambar/audio/video
+- Processing membutuhkan waktu beberapa menit karena keterbatasan komputasi CPU pada deployment **demo**.
 
 ## Quick Start
 
@@ -73,6 +74,7 @@ python api/main.py
 Buka `http://localhost:8000` di browser.
 
 **Cara Menggunakan:** Masukkan teks panjang dalam bahasa Inggris, atur jumlah bagian teks penting yang ingin ditampilkan (1-5), lalu klik tombol "Analisis". Sistem akan menganalisis sentimen teks dan menampilkan bagian-bagian penting beserta ringkasannya.
+ 
 
 ### API
 

@@ -156,7 +156,7 @@ def gradio_interface(text: str, max_excerpts: int = 3, progress=gr.Progress()):
         pipe = get_pipeline()
         logger.info("Pipeline loaded, starting text processing...")
         
-        progress(0.3, desc="Menganalisis teks...")
+        progress(0.3, desc="Menganalisis teks (ini mungkin memakan waktu beberapa menit)...")
         logger.info("Calling pipe.process()...")
         try:
             result = pipe.process(text, max_excerpts=max_excerpts)

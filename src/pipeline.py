@@ -233,11 +233,10 @@ class OpinionIntelligencePipeline:
                 with torch.no_grad():
                     output_ids = self.summarization_model.generate(
                         **inputs,
-                        max_new_tokens=128,
-                        num_beams=2,  
+                        max_new_tokens=50,  # Optimasi untuk CPU (lebih cepat)
+                        num_beams=1,  # Greedy decoding (paling cepat di CPU)
                         early_stopping=True,
-                        do_sample=False,  # greedy decoding lebih cepat
-                        max_time=30.0  # timeout 30 detik per summary
+                        do_sample=False
                     )
                 
                 summary = self.summarization_tokenizer.decode(
