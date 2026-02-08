@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # constants
-MAX_TEXT_LENGTH = 100000  # maksimal 10k karakter
+MAX_TEXT_LENGTH = 100000  # maksimal 100k karakter
 MIN_TEXT_LENGTH = 10  # minimal 10 karakter
 
 # import pipeline functions
@@ -154,9 +154,16 @@ def gradio_interface(text: str, max_excerpts: int = 3, progress=gr.Progress()):
         progress(0.1, desc="Memuat model...")
         logger.info(f"Processing Gradio request (length: {len(text)} chars, max_excerpts: {max_excerpts})")
         pipe = get_pipeline()
+        logger.info("Pipeline loaded, starting text processing...")
         
         progress(0.3, desc="Menganalisis teks...")
-        result = pipe.process(text, max_excerpts=max_excerpts)
+        logger.info("Calling pipe.process()...")
+        try:
+            result = pipe.process(text, max_excerpts=max_excerpts)
+            logger.info("pipe.process() completed successfully")
+        except Exception as process_error:
+            logger.error(f"Error in pipe.process(): {str(process_error)}", exc_info=True)
+            raise
         
         progress(0.8, desc="Menyusun hasil...")
         logger.info("Gradio analysis completed successfully")

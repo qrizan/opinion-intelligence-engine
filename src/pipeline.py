@@ -217,8 +217,10 @@ class OpinionIntelligencePipeline:
 
         summaries = []
         
-        for excerpt in excerpts:
+        for i, excerpt in enumerate(excerpts, 1):
             text = excerpt["text"]
+            logger.info(f"Summarizing excerpt {i}/{len(excerpts)}")
+            
             inputs = self.summarization_tokenizer(
                 f"summarize: {text}",
                 return_tensors="pt",
@@ -227,19 +229,27 @@ class OpinionIntelligencePipeline:
                 max_length=512
             ).to(self.device)
             
-            with torch.no_grad():
-                output_ids = self.summarization_model.generate(
-                    **inputs,
-                    max_new_tokens=128,
-                    num_beams=4,
-                    early_stopping=True
+            try:
+                with torch.no_grad():
+                    output_ids = self.summarization_model.generate(
+                        **inputs,
+                        max_new_tokens=128,
+                        num_beams=2,  
+                        early_stopping=True,
+                        do_sample=False,  # greedy decoding lebih cepat
+                        max_time=30.0  # timeout 30 detik per summary
+                    )
+                
+                summary = self.summarization_tokenizer.decode(
+                    output_ids[0],
+                    skip_special_tokens=True
                 )
-            
-            summary = self.summarization_tokenizer.decode(
-                output_ids[0],
-                skip_special_tokens=True
-            )
-            summaries.append(summary)
+                summaries.append(summary)
+                logger.info(f"Excerpt {i} summarized successfully")
+            except Exception as e:
+                logger.error(f"Error summarizing excerpt {i}: {str(e)}")
+                # Fallback: return empty summary jika error
+                summaries.append("")
         
         return summaries
     
@@ -269,20 +279,28 @@ class OpinionIntelligencePipeline:
                 - summaries: list string dengan ringkasan
         """
 
+        logger.info(f"Starting processing: {len(text)} chars, {max_excerpts} excerpts")
+        
         # 1. chunk text
         chunks = self.chunk_text_by_tokens(text)
+        logger.info(f"Text chunked into {len(chunks)} chunks")
         
         # 2. predict sentiment per chunk
+        logger.info("Starting sentiment prediction...")
         chunk_predictions = self.predict_sentiment_chunks(chunks)
+        logger.info(f"Sentiment prediction completed for {len(chunk_predictions)} chunks")
         
         # 3. aggregate menjadi document-level
         doc_result = self.aggregate_chunk_predictions(chunk_predictions)
         
         # 4. select key excerpts
         key_excerpts = self.select_key_excerpts(chunk_predictions, max_excerpts)
+        logger.info(f"Selected {len(key_excerpts)} key excerpts")
         
         # 5. summarize excerpts
+        logger.info("Starting summarization...")
         summaries = self.summarize_excerpts(key_excerpts)
+        logger.info(f"Summarization completed: {len(summaries)} summaries")
         
         # statistik chunks
         total_chunks = len(chunks)
