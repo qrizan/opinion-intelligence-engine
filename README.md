@@ -2,6 +2,8 @@
 
 Proyek pembelajaran untuk menganalisis opini dan pendapat dari teks panjang menggunakan machine learning. Sistem ini dapat memahami sentimen (positif/negatif) dan merangkum inti dari opini yang dianalisis.
 
+![Demo Aplikasi](screenshots/demo.png)
+
 
 ## Problem Statement
 
@@ -26,6 +28,19 @@ Model machine learning untuk analisis sentimen seringkali memiliki keterbatasan 
 - Tidak bisa memahami sarkasme atau konteks sangat kompleks
 - Hanya untuk teks, tidak untuk gambar/audio/video
 - Processing membutuhkan waktu beberapa menit karena keterbatasan komputasi CPU pada deployment **demo**.
+
+## Models Lifecycle
+
+Model ML bisa mencapai ratusan MB hingga GB, tidak efisien di-commit ke Git
+
+**Alur:**
+1. Model dilatih di Google Colab dan disimpan ke Google Drive
+2. Script `download_models.py` mengunduh model dari Google Drive ke folder `models/`
+3. Script otomatis dijalankan saat Docker build, atau manual: `python download_models.py`
+
+**Persiapan:**
+- Google Drive folder harus di-share dengan akses "Anyone with the link"
+- Set folder IDs di `.env`: `SENTIMENT_FOLDER_ID` dan `SUMMARIZATION_FOLDER_ID`
 
 ## Quick Start
 

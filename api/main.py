@@ -347,17 +347,16 @@ with gr.Blocks(
     )
 
 # mount Gradio ke FastAPI
-# untuk Gradio 4.0+, gunakan mount_gradio_app
 try:
-    # API Gradio 4.0+
-    if hasattr(gr, 'mount_gradio_app'):
-        app = gr.mount_gradio_app(app, gradio_app, path="/")
-    else:
-        # fallback untuk versi lama - mount sebagai ASGI app
-        app.mount("/", gradio_app)
+    app = gr.mount_gradio_app(app, gradio_app, path="/")
 except Exception as e:
-    logger.warning(f"Error mounting Gradio app: {e}")
-    logger.warning("Gradio akan tetap berjalan, tapi mungkin perlu akses terpisah")
+    logger.error(f"Error mounting Gradio app: {e}")
+    # Fallback: mount sebagai ASGI app
+    try:
+        app.mount("/", gradio_app)
+    except Exception as e2:
+        logger.error(f"Fallback mounting also failed: {e2}")
+        raise
 
 # run server
 if __name__ == "__main__":
