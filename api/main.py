@@ -285,8 +285,7 @@ Bagian {i} - {excerpt_label}
 
 # Theme default Gradio - simple dan clean
 with gr.Blocks(
-    title="Opinion Intelligence Engine",
-    theme=gr.themes.Soft()
+    title="Opinion Intelligence Engine"
 ) as gradio_app:
     
     # Header simple
@@ -363,4 +362,9 @@ except Exception as e:
 # run server
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=port,
+        log_level="info"
+    )
