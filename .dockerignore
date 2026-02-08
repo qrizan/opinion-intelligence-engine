@@ -1,0 +1,52 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment (tidak perlu di Docker)
+venv/
+env/
+.venv/
+
+# Model files (akan di-download saat build via download_models.py)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Notebooks (tidak perlu di Docker container)
+notebook/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git (tidak perlu di Docker)
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Environment variables (akan di-pass via build args)
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (tidak perlu di container)
+README.md
+*.md
